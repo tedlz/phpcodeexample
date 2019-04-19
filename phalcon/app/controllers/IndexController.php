@@ -10,43 +10,77 @@ class IndexController extends Controller
 {
     public function _test($date)
     {
-        $hi = date('Hi', strtotime('2019-01-17 09:30:00'));
-        var_dump($hi);
-
-        die;
-        $s = microtime(true);
-        $start = '2019-02-15 00:00:00';
-        $end = '2019-08-25 23:59:59';
-        $range = [
-            ['start' => '2019-02-15', 'end' => '2019-03-18'],
-            ['start' => '2019-04-05', 'end' => '2019-04-22'],
-            ['start' => '2019-04-27', 'end' => '2019-04-28'],
-            ['start' => '2019-05-03', 'end' => '2019-05-06'],
-            ['start' => '2019-06-07', 'end' => '2019-07-01'],
-            ['start' => '2019-07-06', 'end' => '2019-07-07'],
-            ['start' => '2019-07-26', 'end' => '2019-08-19'],
-            ['start' => '2019-08-24', 'end' => '2019-08-25'],
+        $arr1 = [
+            3,
+            1,
+            7,
+            6,
+            11,
         ];
-        for ($i = strtotime($start); $i < strtotime($end); $i += 86400) {
-            $N = date('N');
-            if (in_array($N, [2, 3, 4])) {
+        $arr2 = [
+            ['c' => 1, 'd' => 2],
+            ['c' => 3, 'd' => 4],
+            // ['c' => 5, 'd' => 6],
+            // ['c' => 7, 'd' => 8],
+            ['c' => 11, 'd' => 12],
+        ];
+        $top = [];
+        foreach ($arr2 as $k => $v) {
+            $i = array_search($v['c'], $arr1);
+            if ($i === false) {
                 continue;
             }
-
-            foreach ($range as $v) {
-                $d = date('Y-m-d', $i);
-                if ($d >= $v['start'] && $d <= $v['end']) {
-                    echo $d, PHP_EOL;
-                    break;
-                }
-            }
+            $top[$i] = $v;
+            unset($arr2[$k]);
         }
-        $e = microtime(true);
-        echo sprintf('执行时间：%.4f', $e - $s);
+        ksort($top);
+        $arr2 = array_merge($top, $arr2);
+        print_r($top);
+        print_r($arr2);
 
         die;
-        $a = sprintf("%u", crc32('报警平台'));
-        $b = hash_hmac('ripemd160', '报警平台', $a);
+        $key = 'h01dfa5t&291iveMatch';
+        $time = time();
+        $sign = md5(md5($time . $key) . $key . md5($key . $time));
+        print_r([
+            'time' => $time,
+            'sign' => $sign,
+        ]);
+
+        die;
+        // $s = microtime(true);
+        // $start = '2019-02-15 00:00:00';
+        // $end = '2019-08-25 23:59:59';
+        // $range = [
+        //     ['start' => '2019-02-15', 'end' => '2019-03-18'],
+        //     ['start' => '2019-04-05', 'end' => '2019-04-22'],
+        //     ['start' => '2019-04-27', 'end' => '2019-04-28'],
+        //     ['start' => '2019-05-03', 'end' => '2019-05-06'],
+        //     ['start' => '2019-06-07', 'end' => '2019-07-01'],
+        //     ['start' => '2019-07-06', 'end' => '2019-07-07'],
+        //     ['start' => '2019-07-26', 'end' => '2019-08-19'],
+        //     ['start' => '2019-08-24', 'end' => '2019-08-25'],
+        // ];
+        // for ($i = strtotime($start); $i < strtotime($end); $i += 86400) {
+        //     $N = date('N');
+        //     if (in_array($N, [2, 3, 4])) {
+        //         continue;
+        //     }
+
+        //     foreach ($range as $v) {
+        //         $d = date('Y-m-d', $i);
+        //         if ($d >= $v['start'] && $d <= $v['end']) {
+        //             echo $d, PHP_EOL;
+        //             break;
+        //         }
+        //     }
+        // }
+        // $e = microtime(true);
+        // echo sprintf('执行时间：%.4f', $e - $s);
+
+        // die;
+        $a = sprintf("%u", crc32('天枢平台'));
+        $b = hash_hmac('ripemd160', '天枢平台', $a);
         print_r([
             $a, $b,
         ]);
