@@ -10,34 +10,134 @@ class IndexController extends Controller
 {
     public function _test($date)
     {
-        $arr1 = [
-            3,
-            1,
-            7,
-            6,
-            11,
-        ];
-        $arr2 = [
-            ['c' => 1, 'd' => 2],
-            ['c' => 3, 'd' => 4],
-            // ['c' => 5, 'd' => 6],
-            // ['c' => 7, 'd' => 8],
-            ['c' => 11, 'd' => 12],
-        ];
-        $top = [];
-        foreach ($arr2 as $k => $v) {
-            $i = array_search($v['c'], $arr1);
-            if ($i === false) {
-                continue;
-            }
-            $top[$i] = $v;
-            unset($arr2[$k]);
+        $number = 16; // 赛事规模
+        $groupNumber = 4; // 每组人数
+        $group = ceil($number / $groupNumber);
+        $data = [];
+        // 小组数
+        $start = 'A';
+        for ($i = 0; $i < $group; $i++) {
+            $name = sprintf('%s 组', $start++);
+            $data[$name] = [];
         }
-        ksort($top);
-        $arr2 = array_merge($top, $arr2);
-        print_r($top);
-        print_r($arr2);
+        // 每组轮数、每轮场数
+        $m = $groupNumber; // 每组几人
+        $r = 0; // 每组轮数
+        $count = 0; // 每轮场数
+        if ($m % 2 == 1) {
+            // $m 为奇数时
+            $r = max($m, ($m - 1) / 2); // 每组轮数
+            $count = min($m, ($m - 1) / 2); // 每轮场数
+        } else {
+            // $m 为偶数时
+            $r = max($m / 2, $m - 1); // 每组轮数
+            $count = min($m / 2, $m - 1); // 每轮场数
+        }
+        foreach ($data as $k => $v) {
+            for ($i = 1; $i <= $r; $i++) {
+                $data[$k][] = sprintf('第 %d 轮', $i);
+            }
+        }
 
+        $result = [];
+        $sort = [];
+        $index = 0;
+        foreach ($data as $k => $v) {
+            foreach ($v as $kk => $vv) {
+                for ($i = 1; $i <= $count; $i++) {
+                    // $x = ($index * $count) + ($kk * $group * $count) + $i;
+                    $x = (($i - 1) * $group) + ($kk * $group * $count) + ($index + 1);
+                    $vvv = sprintf('第 %d 场', $x);
+                    $str = sprintf('%s_%s_%s', $k, $vv, $vvv);
+                    // echo $str, PHP_EOL;
+                    $sort[] = $x;
+                    $result[] = [
+                        'round' => $x,
+                        'name' => $str,
+                    ];
+                }
+            }
+            $index++;
+        }
+        // die;
+        array_multisort($sort, SORT_ASC, $result);
+        foreach ($result as $v) {
+            echo $v['name'], PHP_EOL;
+        }
+        die;
+        $arr = range('A', 'Z');
+        // shuffle($arr);
+        // print_r($arr);
+        $number = count($arr);
+        $groupNumber = 3;
+        $result = [];
+        for ($i = 0; $i < ceil($number / $groupNumber); $i++) {
+            $tmp = [];
+            for ($j = 0; $j < $groupNumber; $j++) {
+                $tmp[] = $arr[$i * $groupNumber + $j];
+            }
+            $result[] = $tmp;
+        }
+        print_r($result);
+        die;
+
+        $arr = [
+            [
+                'id' => 1,
+                'name' => 'A',
+            ],
+            [
+                'id' => 2,
+                'name' => 'B',
+                'children' => [
+                    [
+                        'id' => 22,
+                        'name' => 'BB',
+                    ],
+                ],
+            ],
+            [
+                'id' => 3,
+                'name' => 'C',
+                'children' => [
+                    [
+                        'id' => 33,
+                        'name' => 'CC',
+                        'children' => [
+                            [
+                                'id' => 333,
+                                'name' => 'CCC',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        print_r($this->abc($arr));
+
+        die;
+        $x = 128;
+        $n = log($x, 2);
+        $data = [
+            '胜者组' => [],
+            '败者组' => [],
+        ];
+        for ($i = 1; $i <= $n - 2; $i++) {
+            $data['胜者组'][] = sprintf('第 %d 轮', $i);
+        }
+        $data['胜者组'][] = '半决赛';
+        $data['胜者组'][] = '决赛';
+        print_r($data['胜者组']);
+        echo $n, ' -- ', count($data['胜者组']), PHP_EOL, PHP_EOL;
+
+        $a = ($n * 2) - ($n % 2 + 1);
+        for ($i = 1; $i <= $a; $i++) {
+            $data['败者组'][] = sprintf('第 %d 轮', $i);
+        }
+        print_r($data['败者组']);
+        echo $a;
+
+        echo PHP_EOL;
         die;
         $key = 'h01dfa5t&291iveMatch';
         $time = time();
@@ -552,4 +652,17 @@ class IndexController extends Controller
         return (int) $pid;
     }
 
+    public function abc($arr)
+    {
+        static $a = [];
+        foreach ($arr as $v) {
+            if (isset($v['children'])) {
+                $this->abc($v['children']);
+                continue;
+            }
+            $a[] = $v['id'];
+        }
+
+        return $a;
+    }
 }
