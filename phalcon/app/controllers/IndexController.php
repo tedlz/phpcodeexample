@@ -8,62 +8,129 @@ use Phalcon\Mvc\Controller;
 
 class IndexController extends Controller
 {
+    const MATCH_SEMIFINAL = '半决赛';
+    const MATCH_FINAL = '决赛';
+    const GROUP_WIN = '胜者组';
+    const GROUP_LOSE = '败者组';
+
     public function _test($date)
     {
-        $number = 16; // 赛事规模
-        $groupNumber = 4; // 每组人数
-        $group = ceil($number / $groupNumber);
-        $data = [];
-        // 小组数
-        $start = 'A';
-        for ($i = 0; $i < $group; $i++) {
-            $name = sprintf('%s 组', $start++);
-            $data[$name] = [];
+        $number = 16;
+        $n = log($number, 2);
+        // count(data[胜者组]) = log₂N + 1 = n + 1
+        $data = [
+            self::GROUP_WIN => [],
+            self::GROUP_LOSE => [],
+        ];
+        for ($i = 1; $i <= $n - 1; $i++) {
+            $data[self::GROUP_WIN][] = sprintf('第 %d 轮', $i);
         }
-        // 每组轮数、每轮场数
-        $m = $groupNumber; // 每组几人
-        $r = 0; // 每组轮数
-        $count = 0; // 每轮场数
-        if ($m % 2 == 1) {
-            // $m 为奇数时
-            $r = max($m, ($m - 1) / 2); // 每组轮数
-            $count = min($m, ($m - 1) / 2); // 每轮场数
-        } else {
-            // $m 为偶数时
-            $r = max($m / 2, $m - 1); // 每组轮数
-            $count = min($m / 2, $m - 1); // 每轮场数
+        $data[self::GROUP_WIN][] = self::MATCH_SEMIFINAL;
+        $data[self::GROUP_WIN][] = self::MATCH_FINAL;
+
+        // count(data[败者组]) = 2log₂N - 2 = 2n - 2
+        $a = $n * 2 - 2;
+        for ($i = 1; $i <= $a; $i++) {
+            $data[self::GROUP_LOSE][] = sprintf('第 %d 轮', $i);
         }
+
+        $weight = 1; // 父级目录权重
+        // 胜者组和败者组分别计算
+        $numberWin = $number; // 胜者组第一轮人数
+        $numberLose = $number / 2; // 败者组第一轮人数
+        $lose = []; // 失败者人数
+        $result = [];
+
+        // 记录每轮有几场
+        $roundWin = []; // 记录胜者组每轮有几场
+        $roundLose = []; // 计算败者组每轮有几场
         foreach ($data as $k => $v) {
-            for ($i = 1; $i <= $r; $i++) {
-                $data[$k][] = sprintf('第 %d 轮', $i);
+            $countV = count($v);
+            foreach ($v as $kk => $vv) {
+                if ($k == self::GROUP_WIN) {
+                    // 如果是胜者组，计算胜者组每轮的场次
+                    $count = ceil($numberWin / 2);
+                    $numberWin -= $count;
+
+                    // 当非首轮（第一轮）和决赛轮（最后一轮）时，记录胜者组被淘汰的人数
+                    if ($kk > 0 && $kk < $countV - 1) {
+                        $lose[] = $count; // 胜者组每轮被淘汰和胜利的人数一样多
+                    }
+
+                    $roundWin[] = $count;
+                    // echo self::GROUP_WIN, ' ', $count, PHP_EOL;
+                } else if ($k == self::GROUP_LOSE) {
+                    // 偶数轮且非最后一轮时，把胜者组淘汰的选手加到败者组里，再来计算败者组场次
+                    if ($kk % 2 == 1 && $kk < $countV - 1) {
+                        $numberLose += array_shift($lose);
+                    }
+
+                    // 如果是败者组，计算败者组每轮的场次
+                    $count = ceil($numberLose / 2);
+                    $numberLose -= $count;
+
+                    $roundLose[] = $count;
+                    // echo self::GROUP_LOSE, ' ', $count, PHP_EOL;
+                }
             }
         }
 
-        $result = [];
+        // 记录场次编号
+        $indexWin = []; // 记录胜者组每轮的编号
+        $indexLose = []; // 记录败者组每轮的编号
+        $index = 1;
+        for ($i = 1; $i <= $n + 1; $i++) {
+            $Wi = $i - 1;
+            $L1i = ($i - 1) * 2 - 1;
+            $L2i = ($i - 1) * 2;
+            $W = $roundWin[$Wi];
+            $L1 = isset($roundLose[$L1i]) ? $roundLose[$L1i] : 0;
+            $L2 = isset($roundLose[$L2i]) ? $roundLose[$L2i] : 0;
+
+            for ($j = 0; $j < $W; $j++) {
+                $indexWin[$Wi] = $index;
+                $index++;
+            }
+            for ($k = 0; $k < $L1; $k++) {
+                $indexLose[$L1i] = $index;
+                $index++;
+            }
+            for ($l = 0; $l < $L2; $l++) {
+                $indexLose[$L2i] = $index;
+                $index++;
+            }
+        }
+        $indexWin[count($indexWin) - 1] = $index - 1;
+        print_r($roundWin);
+        print_r($indexWin);
+        print_r($roundLose);
+        print_r($indexLose);
+        // die;
         $sort = [];
-        $index = 0;
+        $result = [];
         foreach ($data as $k => $v) {
             foreach ($v as $kk => $vv) {
-                for ($i = 1; $i <= $count; $i++) {
-                    // $x = ($index * $count) + ($kk * $group * $count) + $i;
-                    $x = (($i - 1) * $group) + ($kk * $group * $count) + ($index + 1);
-                    $vvv = sprintf('第 %d 场', $x);
-                    $str = sprintf('%s_%s_%s', $k, $vv, $vvv);
-                    // echo $str, PHP_EOL;
-                    $sort[] = $x;
-                    $result[] = [
-                        'round' => $x,
-                        'name' => $str,
-                    ];
+                if ($k == self::GROUP_WIN) {
+                    // 胜者组
+                    for ($i = 1; $i <= $roundWin[$kk]; $i++) {
+                        $round = $indexWin[$kk] - $roundWin[$kk] + $i;
+                        $str = sprintf('%s_%s_第 %s 场', $k, $vv, $round);
+                        $sort[] = $round;
+                        $result[] = $str;
+                    }
+                } else if ($k == self::GROUP_LOSE) {
+                    // 败者组
+                    for ($i = 1; $i <= $roundLose[$kk]; $i++) {
+                        $round = $indexLose[$kk] - $roundLose[$kk] + $i;
+                        $str = sprintf('%s_%s_第 %s 场', $k, $vv, $round);
+                        $sort[] = $round;
+                        $result[] = $str;
+                    }
                 }
             }
-            $index++;
         }
-        // die;
         array_multisort($sort, SORT_ASC, $result);
-        foreach ($result as $v) {
-            echo $v['name'], PHP_EOL;
-        }
+        print_r($result);
         die;
         $arr = range('A', 'Z');
         // shuffle($arr);
